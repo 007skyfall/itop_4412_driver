@@ -1,0 +1,2 @@
+/home/skyfall/Downloads/003_pi_driver/002_hq_driver/037_wait_queue_head_t/wait_queue_head_t.ko
+/home/skyfall/Downloads/003_pi_driver/002_hq_driver/037_wait_queue_head_t/wait_queue_head_t.o
