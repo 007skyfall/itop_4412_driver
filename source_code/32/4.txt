@@ -1,0 +1,75 @@
+主要内容：Linux-spi驱动
+知识点:
+不介绍：SPI协议数据传输具体的逻辑，详细介绍SPI总线架构！
+
+知识回顾：Linux主机驱动和外设驱动分离思想（i2c驱动系列教程中有介绍）
+
+SPI驱动总线架构：SPI核心层（x），SPI控制器驱动层（x），SPI设备驱动层（√）
+	
+教程中介绍：SPI函数接口（API）：
+	简单介绍SPI协议，硬件原理（4412datasheet）
+		SDI(数据输入BUF_I2C_SCL6)，SDO(数据输出BUF_I2C_SDA6)，SCLK(时钟BUF_GPC1_1)，CS(片选BK_LED)
+		spi(rfid模块)的硬件基础知识（复位DC33_EN）
+		spi clk管脚复用：Android4.0（wifi不能用）；spi：can和rfid(全能版默认配置can，rfid)
+		rfid的驱动配置：
+		Device Drivers
+		→SPI support
+		→SPI_RC522
+		can的驱动配置：
+		Networking support
+		→CAN bus subsystem support 
+		→CAN Device Drivers
+		Platform CAN drivers with Netlink support（默认配置，不用动）
+		CAN_MCP251X 
+	
+	后几期视频介绍内容：
+	设备注册：spi_board_info，spi_register_board_info
+	驱动注册函数和结构体：spi_register_driver/spi_unregister_driver,spi_driver
+	读写函数和结构体：spi_transfer和spi_message结构体，spi_async
+	
+
+1.驱动“设备注册，驱动注册，probe，数据下传，数据上传”的小结
+2.设备-SPI设备注册以及设备注册之后的查询方法
+	2.1spi_board_info参数
+		.modalias = "rc522",	//初始化设备的名称
+		.platform_data = NULL,	
+		.max_speed_hz = 10*1000*1000,	//初始化传输速率
+		.bus_num = 2,		//控制器编号
+		.chip_select = 0,	//控制器片选的编号
+		.mode = SPI_MODE_0,	//spi的模式
+		.controller_data = &spi2_csi[0],	//片选IO的信息
+	spi2_board_info设备描述结构体，设备注册函数spi_register_board_info
+	
+	2.2设备查询
+	2.2.1添加rfid驱动的内核：
+	cat sys/bus/spi/devices/spi2.0/modalias 
+	rfid的设备名称rc522
+	
+	2.2.2增加一个spi设备my_rc522,然后去掉rfid和can驱动
+	cat sys/bus/spi/devices/spi2.0/modalias
+	rfid的设备名称my_rc522
+
+3.驱动-SPI驱动注册和卸载。SPI设备驱动初始化完成-进入probe函数。
+
+4.驱动-spi数据的传输
+	1.本节实验需要RFID的硬件模块
+	2.
+	 2.1平台文件中RC522的设备名称直接改为my_rc522
+	 2.2需要配置rfid对应的menuconfig
+	 2.3 drivers/spi/Makefile中注释掉rc522.c文件的编译
+	3.从rc522驱动中提取spi传输的核心代码
+	4.直接在probe中做复位，读，写测试
+		写：rc522_write→rc522_sync_write→rc522_sync→spi_async
+		读：rc522_read→rc522_sync_read→rc522_sync→spi_async
+		
+5.Liux-spi利用字符驱动完成应用层对spi的读和写（驱动只管机制，不管策略）
+	1.在驱动中，使用杂项设备的方式产生设备节点，提供对spi接口的打开、读和写操作
+	2.在应用中，完成对rc522的读和写→读卡
+
+
+
+
+
+
+
+

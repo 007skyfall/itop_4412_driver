@@ -1,0 +1,70 @@
+主要内容：Linux-定时器
+
+知识点:
+1.Linux定时器基础知识
+	1.1 定时器的使用范围（延后执行某个操作，定时查询某个状态；前提是对时间要求不高的地方）
+	1.2 内核时间概念
+	HZ：（系统时钟通过CONFIG_HZ来设置，范围是100-1000;HZ决定时钟中断发生的频率）
+	内核的全局变量jiffies：（记录内核自启动来的节拍数,内核之启动以来，产生的中断数）  
+	jiffies/HZ 内核自启动以来的秒数
+	
+2 内核定时器的例程
+	结构体timer_list，函数setup_timer，add_timer，del_timer，mod_timer
+	2.1 timer_list参数struct list_head entry 双向链表。
+		unsigned long expires;超时时间。记录什么时候产生时钟中断。
+		struct tvec_base *base;管理时钟的结构体
+		void (*function)(unsigned long);时钟中断产生之后的动作
+		unsigned long data;传递的参数
+		
+	2.2 双向链表
+	platform_driver_register→driver_register
+	→bus_add_driver→struct bus_type *bus
+	→struct subsys_private *p
+	→struct kset subsys
+	→struct list_head list;
+	
+	2.3 mod_timer = del_timer(timer)；timer->expires = expires; add_timer(timer);
+	
+	
+3 内核定时器内核代码分析（可以不看，分析不懂没关系，不影响驱动移植）
+	从内核定时器初始化到定时器例程
+	
+	3.1 add_timer如何添加定时器
+		add_timer→mod_timer
+		→__mod_timer（内核函数有下划线，表示“局部函数”）
+		→internal_add_timer
+	3.2 struct tvec_base *base结构体分析--管理内核时钟的结构体
+		struct tvec_base {
+		spinlock_t lock;	//自旋锁
+		struct timer_list *running_timer;	//内核中正在处理的定时器
+		unsigned long timer_jiffies;		//内核目前正在处理的定时器时间
+		unsigned long next_timer;	
+		struct tvec_root tv1;
+		{
+			struct list_head vec[TVR_SIZE];//256长度数组
+			TVR_SIZE→#define TVR_SIZE (1 << TVR_BITS)
+			TVR_BITS=8;
+			宏定义CONFIG_BASE_SMALL=0
+			TVR_SIZE = 256
+		}
+		struct tvec tv2;	//64长度数组
+		struct tvec tv3;
+		struct tvec tv4;
+		struct tvec tv5;
+	}
+		
+	per_cpu 与CPU核多少有关	
+	DEFINE_PER_CPU看到这样的变量，就表明这个变量是和CPU核相关的。
+		
+	3.3 internal_add_timer
+	  分析idx参数
+	如果idx<256,则将time_list添加到TV1
+	如果idx<256*64,则将time_list添加到TV2
+	如果idx<256*64*64,则将time_list添加到TV3
+	如果idx<256*64*64*64,则将time_list添加到TV4
+	如果idx > 0xffffffffUL，则将time_list添加到TV5
+	
+	3.4 list_add_tail
+		双向链表操作函数都在include/linux/list.h文件中
+		
+

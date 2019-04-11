@@ -1,0 +1,1 @@
+cmd_/home/skyfall/iTOP4412/driver/004_one_led/one_led.ko := arm-none-linux-gnueabi-ld -EL -r  -T /home/skyfall/iTOP4412/kernel/iTop4412_Kernel_3.0/scripts/module-common.lds --build-id  -o /home/skyfall/iTOP4412/driver/004_one_led/one_led.ko /home/skyfall/iTOP4412/driver/004_one_led/one_led.o /home/skyfall/iTOP4412/driver/004_one_led/one_led.mod.o
